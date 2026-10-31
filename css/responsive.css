@@ -1,0 +1,198 @@
+/* css/responsive.css */
+@media (max-width: 900px) {
+    .sidebar {
+        width: 240px;
+    }
+}
+
+/* mobile: sidebar becomes drawer */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
+    }
+
+    body.drawer-open .sidebar {
+        transform: translateX(0);
+    }
+
+    [data-sidebar="collapsed"] .sidebar {
+        width: 280px;
+    }
+
+    [data-sidebar="collapsed"] .sidebar .brand-text,
+    [data-sidebar="collapsed"] .sidebar .new-chat-btn span,
+    [data-sidebar="collapsed"] .sidebar .sidebar-search input,
+    [data-sidebar="collapsed"] .sidebar .sidebar-section-label,
+    [data-sidebar="collapsed"] .sidebar .chat-list,
+    [data-sidebar="collapsed"] .sidebar .side-btn span {
+        display: initial;
+    }
+
+    .mobile-menu {
+        display: flex;
+    }
+
+    .sidebar-collapse {
+        display: none;
+    }
+
+    .topbar {
+        padding: 0 12px;
+        height: 56px;
+    }
+
+    .topbar-name {
+        font-size: 14px;
+    }
+
+    .messages,
+    .welcome {
+        padding: 16px 14px 10px;
+    }
+
+    .welcome {
+        padding-top: 32px;
+    }
+
+    .welcome-title {
+        font-size: 22px;
+    }
+
+    .welcome-desc {
+        font-size: 13.5px;
+    }
+
+    .welcome-note {
+        font-size: 12.5px;
+    }
+
+    .quick-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .quick-card {
+        padding: 12px;
+    }
+
+    .qc-title {
+        font-size: 13px;
+    }
+
+    .qc-sub {
+        font-size: 11px;
+    }
+
+    .bubble-wrap {
+        max-width: 88%;
+    }
+
+    .bubble {
+        font-size: 14.5px;
+        padding: 11px 14px;
+    }
+
+    .row-avatar {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .row {
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .resources {
+        margin-left: 34px;
+        max-width: calc(88% + 34px);
+        padding: 12px 14px;
+    }
+
+    .resource .rphone {
+        font-size: 18px;
+    }
+
+    .composer {
+        padding: 10px 12px 12px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+
+    #input {
+        font-size: 15px;
+    }
+
+    /* modal becomes bottom-sheet on mobile */
+    .modal-backdrop {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .modal {
+        border-radius: 20px 20px 0 0;
+        max-height: 92dvh;
+        animation: slideUpSheet 0.25s ease;
+    }
+
+    .modal-sm {
+        border-radius: 20px 20px 0 0;
+    }
+
+    @keyframes slideUpSheet {
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    .settings-grid {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .settings-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+        padding: 8px;
+        min-width: 0;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .settings-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .settings-tab {
+        white-space: nowrap;
+    }
+
+    .settings-panes {
+        max-height: 52dvh;
+        padding: 16px;
+    }
+}
+
+@media (max-width: 400px) {
+    .quick-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .bubble-wrap {
+        max-width: 92%;
+    }
+
+    .msg-actions {
+        opacity: 1;
+    }
+}

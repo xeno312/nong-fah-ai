@@ -1,0 +1,94 @@
+/* css/themes.css */
+/* Color tokens for light and dark. System mode toggles data-theme via JS. */
+
+:root,
+[data-theme="light"] {
+    --bg: #F7F5F0;
+    --bg-elevated: #FFFFFF;
+    --bg-subtle: #F0EBE0;
+    --bg-hover: #ECE6D8;
+    --border: #E8E3D8;
+    --border-strong: #DDD6C7;
+
+    --text: #1A1D23;
+    --text-dim: #6B7280;
+    --text-muted: #9CA3AF;
+
+    --accent: #5B7CFA;
+    --accent-2: #8B5CF6;
+    --accent-soft: rgba(91, 124, 250, 0.1);
+    --accent-text: #FFFFFF;
+
+    --user-bubble: #5B7CFA;
+    --user-bubble-text: #FFFFFF;
+    --bot-bubble: #FFFFFF;
+    --bot-bubble-border: #E8E3D8;
+
+    --danger: #B91C1C;
+    --danger-bg: #FEF2F2;
+    --danger-border: #FECACA;
+
+    --shadow-sm: 0 1px 2px rgba(20, 20, 30, 0.04);
+    --shadow-md: 0 4px 16px rgba(20, 20, 30, 0.06);
+    --shadow-lg: 0 12px 40px rgba(20, 20, 30, 0.12);
+    --overlay: rgba(20, 20, 30, 0.4);
+
+    --sidebar-bg: #FFFFFF;
+    --sidebar-active: #F0EBE0;
+    --scroll-thumb: #DDD6C7;
+}
+
+[data-theme="dark"] {
+    --bg: #111318;
+    --bg-elevated: #181B22;
+    --bg-subtle: #1E222B;
+    --bg-hover: #252A35;
+    --border: #262B36;
+    --border-strong: #343A47;
+
+    --text: #E7E9EE;
+    --text-dim: #9CA3AF;
+    --text-muted: #6B7280;
+
+    --accent: #7B92FF;
+    --accent-2: #A78BFA;
+    --accent-soft: rgba(123, 146, 255, 0.14);
+    --accent-text: #0F1115;
+
+    --user-bubble: #5B7CFA;
+    --user-bubble-text: #FFFFFF;
+    --bot-bubble: #181B22;
+    --bot-bubble-border: #262B36;
+
+    --danger: #F87171;
+    --danger-bg: rgba(248, 113, 113, 0.1);
+    --danger-border: rgba(248, 113, 113, 0.3);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+    --overlay: rgba(0, 0, 0, 0.6);
+
+    --sidebar-bg: #14171C;
+    --sidebar-active: #1E222B;
+    --scroll-thumb: #343A47;
+}
+
+/* Font size */
+[data-font="small"] {
+    --font-base: 14px;
+    --font-sm: 12.5px;
+    --font-lg: 16px;
+}
+
+[data-font="medium"] {
+    --font-base: 15.5px;
+    --font-sm: 13.5px;
+    --font-lg: 18px;
+}
+
+[data-font="large"] {
+    --font-base: 17px;
+    --font-sm: 15px;
+    --font-lg: 20px;
+}
