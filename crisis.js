@@ -5,10 +5,15 @@ const ACUTE = [
     /\b(kill myself|suicide|want to die|end my life|end it all)\b/i,
     /กรีดแขน/i, /กรีดข้อมือ/i, /ทำร้ายตัวเอง/i, /กัดแขน/i, /เผาตัวเอง/i,
     /\b(cutting|self.harm|hurt myself)\b/i,
-    /กำลังถูกทำร้าย/i, /พ่อกำลังตี/i, /แม่กำลังตี/i, /ถูกข่มขืน/i,
-    /โดนลวนลาม/i, /โดนบังคับ/i, /ถูกทุบตี/i, /หนีออกจากบ้าน/i,
-    /\b(being abused|being raped|being beaten|running away)\b/i,
-    /กลัวตาย/i, /มีดอยู่ที่คอ/i, /เขาจะฆ่า/i,
+    /กลัวตาย/i,
+];
+
+const TIER_3 = [
+    /พ่อกำลังตี/i, /แม่กำลังตี/i, /กำลังถูกทำร้าย/i, /ถูกทุบตี/i,
+    /มีมีด/i, /เอาปืน/i, /เขากำลังบุก/i, /กำลังจะฆ่า/i,
+    /เลือดออกเยอะ/i, /ถูกขัง/i, /กำลังถูกข่มขืน/i, /โดนลวนลาม/i,
+    /หนีออกจากบ้าน/i, /มีดอยู่ที่คอ/i, /เขาจะฆ่า/i,
+    /\b(being attacked|has a knife|has a gun|bleeding out|locked in|being raped)\b/i,
 ];
 
 const CONCERNING = [
@@ -29,43 +34,46 @@ const INDIRECT = [
 ];
 
 function detect(text) {
-    if (!text || typeof text !== 'string') {
-        return { tier: 0, matches: [] };
-    }
+    if (!text || typeof text !== 'string') return { tier: 0, matches: [] };
 
+    // Tier 3: Active danger
+    const tier3Hits = [];
+    for (const pat of TIER_3) {
+        const m = text.match(pat);
+        if (m) tier3Hits.push(m[0]);
+        if (tier3Hits.length >= 3) break;
+    }
+    if (tier3Hits.length) return { tier: 3, matches: tier3Hits };
+
+    // Tier 2: Self-harm / suicidal
     const acuteHits = [];
     for (const pat of ACUTE) {
         const m = text.match(pat);
         if (m) acuteHits.push(m[0]);
         if (acuteHits.length >= 3) break;
     }
-    if (acuteHits.length) {
-        return { tier: 2, matches: acuteHits };
-    }
+    if (acuteHits.length) return { tier: 2, matches: acuteHits };
 
+    // Tier 1: Concerning / indirect
     const concerningHits = [];
     for (const pat of CONCERNING) {
         const m = text.match(pat);
         if (m) concerningHits.push(m[0]);
         if (concerningHits.length >= 3) break;
     }
-
     if (!concerningHits.length) {
         for (const pat of INDIRECT) {
             const m = text.match(pat);
             if (m) { concerningHits.push(m[0]); break; }
         }
     }
-
-    if (concerningHits.length) {
-        return { tier: 1, matches: concerningHits };
-    }
+    if (concerningHits.length) return { tier: 1, matches: concerningHits };
 
     return { tier: 0, matches: [] };
 }
 
 function escalate(baseTier, history) {
-    if (baseTier >= 2) return 2;
+    if (baseTier >= 3) return 3;
     if (!Array.isArray(history)) return baseTier;
 
     const recentUser = history.slice(-10).filter((m) => m.role === 'user');
@@ -80,6 +88,7 @@ function escalate(baseTier, history) {
         }
     }
 
+    if (baseTier >= 2) return 2;
     if (concerning >= 3) return 2;
     if (indirect >= 2) return 2;
     if (concerning >= 2 && baseTier >= 1) return 2;

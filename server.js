@@ -15,7 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const SESSIONS = new Map();
 const SESSION_TTL_MS = 60 * 60 * 1000;
-const MAX_TURNS = 30;
+const MAX_TURNS = 20; // สรุปเมื่อเกิน 20 ข้อความ
+const KEEP_TURNS = 10; // เก็บ 10 ข้อความล่าสุดไว้
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT = 20;
 const RATE_BUCKETS = new Map();
@@ -39,7 +40,7 @@ function rateOk(sid) {
 
 app.post('/api/new-session', (req, res) => {
     const sid = crypto.randomBytes(24).toString('base64url');
-    SESSIONS.set(sid, { history: [], last: Date.now(), province: null, alertedAt: 0 });
+    SESSIONS.set(sid, { history: [], summary: '', last: Date.now(), province: null, alertedAt: 0 });
     res.json({ session_id: sid });
 });
 
@@ -57,19 +58,32 @@ app.post('/api/chat', async (req, res) => {
 
     let sess = SESSIONS.get(sid);
     if (!sess) {
-        sess = { history: [], last: Date.now(), province, alertedAt: 0 };
+        sess = { history: [], summary: '', last: Date.now(), province, alertedAt: 0 };
         SESSIONS.set(sid, sess);
     }
     sess.last = Date.now();
     if (province) sess.province = province;
+
+    // 1. ตรวจสอบและจัดการ Memory (Summarization)
+    if (sess.history.length >= MAX_TURNS) {
+        const toSummarize = sess.history.slice(0, MAX_TURNS - KEEP_TURNS);
+        try {
+            const newSummary = await llm.summarize(toSummarize);
+            sess.summary = sess.summary ? `${sess.summary}\n- ${newSummary}` : newSummary;
+            sess.history = sess.history.slice(MAX_TURNS - KEEP_TURNS);
+        } catch (e) {
+            console.error('Summarization error:', e.message);
+            // ถ้าสรุปพลาด ให้ตัดทิ้งไปเลยเพื่อป้องกัน context บวม
+            sess.history = sess.history.slice(MAX_TURNS - KEEP_TURNS);
+        }
+    }
 
     const base = crisis.detect(message);
     const effectiveTier = crisis.escalate(base.tier, sess.history);
 
     if (effectiveTier >= 2 && !sess.alertedAt) {
         sess.alertedAt = Date.now();
-        const reason = base.matches.length ? base.matches.join(', ')
-            : 'escalation (repeated concerning signals)';
+        const reason = base.matches.length ? base.matches.join(', ') : 'escalation';
         alerting.alertOperator(sid, effectiveTier, reason).catch(() => { });
     }
 
@@ -78,7 +92,8 @@ app.post('/api/chat', async (req, res) => {
 
     let reply;
     try {
-        reply = await llm.chat(trimmed, effectiveTier);
+        // ส่ง summary ไปให้ LLM ด้วยเพื่อให้มันจำบริบทเก่าได้
+        reply = await llm.chat(trimmed, effectiveTier, sess.summary);
     } catch (e) {
         console.error(`[llm error] ${e.message}`);
         return res.json({
@@ -114,8 +129,4 @@ app.listen(PORT, () => {
     console.log(`น้องฟ้า listening on http://localhost:${PORT}`);
     console.log(`mode: ${mode}`);
     console.log(`alerts: ${alertingOn ? 'on' : 'off (ALERT_WEBHOOK not set)'}`);
-    if (mode === 'LLM') {
-        console.log(`  base:  ${process.env.LLM_BASE_URL}`);
-        console.log(`  model: ${process.env.LLM_MODEL}`);
-    }
 });

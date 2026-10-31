@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#F7F5F0">
     <title>น้องฟ้า — Nong Fah AI</title>
+    <link rel="icon" href="/logo.png" type="image/png">
+    <link rel="manifest" href="/manifest.json">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,6 +48,8 @@
             --sidebar-bg: #FFFFFF;
             --sidebar-active: #F0EBE0;
             --scroll-thumb: #DDD6C7;
+            --exit-btn: #EF4444;
+            --exit-btn-hover: #DC2626;
         }
 
         [data-theme="dark"] {
@@ -64,8 +68,8 @@
             --accent-text: #0F1115;
             --user-bubble: #5B7CFA;
             --user-bubble-text: #FFFFFF;
-            --bot-bubble: #181B22;
-            --bot-bubble-border: #262B36;
+            --bot-bubble: #1E222B;
+            --bot-bubble-border: #2D323E;
             --danger: #F87171;
             --danger-bg: rgba(248, 113, 113, 0.1);
             --danger-border: rgba(248, 113, 113, 0.3);
@@ -76,6 +80,8 @@
             --sidebar-bg: #14171C;
             --sidebar-active: #1E222B;
             --scroll-thumb: #343A47;
+            --exit-btn: #EF4444;
+            --exit-btn-hover: #DC2626;
         }
 
         [data-font="small"] {
@@ -145,6 +151,125 @@
             overflow: hidden;
         }
 
+        /* ══════════ LOCK SCREEN ══════════ */
+        #lockScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: var(--bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #lockScreen.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lock-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lock-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .lock-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .lock-sub {
+            color: var(--text-dim);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .unlock-btn {
+            padding: 12px 32px;
+            border-radius: 12px;
+            border: 0;
+            background: var(--text);
+            color: var(--bg);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .unlock-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* ══════════ QUICK EXIT ══════════ */
+        .quick-actions {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 9999;
+            display: flex;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .quick-actions button {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 13.5px;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.1s, background 0.15s;
+            border: 1px solid transparent;
+        }
+
+        .quick-actions button:active {
+            transform: scale(0.95);
+        }
+
+        .save-chat-btn {
+            background: var(--bg-elevated);
+            color: var(--text);
+            border-color: var(--border) !important;
+        }
+
+        .save-chat-btn:hover {
+            background: var(--bg-hover);
+        }
+
+        .quick-exit-btn {
+            background: var(--exit-btn);
+            color: white;
+            border-color: var(--exit-btn) !important;
+        }
+
+        .quick-exit-btn:hover {
+            background: var(--exit-btn-hover);
+        }
+
         /* Sidebar */
         .sidebar {
             width: 268px;
@@ -209,18 +334,40 @@
             min-width: 0;
         }
 
+        /* Avatar System */
+        .avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar.text-avatar {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
         .brand-avatar {
             width: 34px;
             height: 34px;
             border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
-            flex-shrink: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+        }
+
+        .brand-avatar img {
+            object-position: left center;
+            transform: scale(1.4);
+            transform-origin: left center;
         }
 
         .brand-text {
@@ -495,14 +642,14 @@
             width: 34px;
             height: 34px;
             border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 13px;
-            flex-shrink: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+        }
+
+        .ai-avatar-sm img {
+            object-position: left center;
+            transform: scale(1.4);
+            transform-origin: left center;
         }
 
         .topbar-meta {
@@ -553,7 +700,7 @@
 
         .messages,
         .welcome {
-            max-width: 820px;
+            max-width: 880px;
             margin: 0 auto;
             padding: 24px 24px 12px;
         }
@@ -565,19 +712,13 @@
             animation: fadeUp 0.4s ease;
         }
 
-        .welcome-avatar {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 20px;
+        .welcome-logo {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 24px;
+            display: block;
             border-radius: 20px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 24px;
-            box-shadow: 0 8px 24px rgba(91, 124, 250, 0.24);
+            box-shadow: 0 8px 32px rgba(91, 124, 250, 0.15);
         }
 
         .welcome-title {
@@ -677,7 +818,7 @@
         /* Messages */
         .row {
             display: flex;
-            margin-bottom: 18px;
+            margin-bottom: 24px;
             gap: 10px;
             animation: fadeUp 0.25s ease;
             position: relative;
@@ -695,15 +836,15 @@
             width: 30px;
             height: 30px;
             border-radius: 8px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            flex-shrink: 0;
+            background: #fff;
+            border: 1px solid var(--border);
             margin-top: 2px;
+        }
+
+        .row-avatar img {
+            object-position: left center;
+            transform: scale(1.4);
+            transform-origin: left center;
         }
 
         .bubble-wrap {
@@ -766,7 +907,7 @@
         }
 
         [data-density="compact"] .row {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         [data-density="compact"] .bubble {
@@ -892,7 +1033,7 @@
         .msg-actions {
             display: flex;
             gap: 2px;
-            margin-top: 4px;
+            margin-top: 6px;
             opacity: 0;
             transition: opacity 0.15s;
             height: 26px;
@@ -926,10 +1067,15 @@
         }
 
         .msg-time {
-            font-size: 11px;
+            font-size: 11.5px;
             color: var(--text-muted);
             margin-top: 4px;
             padding: 0 4px;
+            opacity: 0.8;
+        }
+
+        .row.user .msg-time {
+            text-align: right;
         }
 
         .typing-bubble {
@@ -1058,7 +1204,7 @@
         }
 
         .composer-inner {
-            max-width: 820px;
+            max-width: 880px;
             margin: 0 auto;
         }
 
@@ -1168,7 +1314,7 @@
             text-align: center;
         }
 
-        /* Modal & Settings */
+        /* Modals & Overlays */
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -1289,6 +1435,94 @@
             color: var(--text);
         }
 
+        /* Crisis Overlay (Tier 3) */
+        .crisis-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: #7f1d1d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .crisis-overlay[hidden] {
+            display: none;
+        }
+
+        .crisis-box {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 32px 24px;
+            text-align: center;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .crisis-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #b91c1c;
+            margin: 0 0 12px;
+        }
+
+        .crisis-desc {
+            font-size: 15px;
+            color: #1A1D23;
+            line-height: 1.6;
+            margin: 0 0 24px;
+        }
+
+        .crisis-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .crisis-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .crisis-btn:active {
+            transform: scale(0.98);
+        }
+
+        .crisis-btn.police {
+            background: #b91c1c;
+        }
+
+        .crisis-btn.ems {
+            background: #ef4444;
+        }
+
+        .crisis-btn.social {
+            background: #f59e0b;
+        }
+
+        .crisis-safe-btn {
+            background: transparent;
+            border: 0;
+            color: #6B7280;
+            font-size: 13px;
+            text-decoration: underline;
+            margin-top: 16px;
+            cursor: pointer;
+        }
+
+        /* Settings */
         .settings-grid {
             display: flex;
             gap: 20px;
@@ -1416,10 +1650,21 @@
             color: var(--text);
             cursor: pointer;
             transition: border-color 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 0;
         }
 
         .avatar-choices button.active {
             border-color: var(--accent);
+        }
+
+        .avatar-choices button img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .color-choices {
@@ -1528,7 +1773,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s, transform 0.2s;
-            z-index: 100;
+            z-index: 10001;
             white-space: nowrap;
             max-width: 90vw;
             overflow: hidden;
@@ -1540,7 +1785,59 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        /* ══════════ RESPONSIVE ══════════ */
+        /* Export Modal */
+        .export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .export-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .export-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+
+        .export-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .export-text h4 {
+            margin: 0 0 4px;
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .export-text p {
+            margin: 0;
+            font-size: 12.5px;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        /* Responsive */
         @media (max-width: 900px) {
             .sidebar {
                 width: 240px;
@@ -1548,6 +1845,29 @@
         }
 
         @media (max-width: 768px) {
+            .quick-actions {
+                top: 66px;
+                right: 12px;
+                gap: 6px;
+            }
+
+            .quick-actions button {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .quick-actions button span {
+                display: none;
+            }
+
+            .quick-actions button {
+                width: 40px;
+                height: 40px;
+                padding: 0;
+                justify-content: center;
+                border-radius: 50%;
+            }
+
             .sidebar {
                 position: fixed;
                 top: 0;
@@ -1721,6 +2041,14 @@
                 max-height: 52dvh;
                 padding: 16px;
             }
+
+            .crisis-box {
+                padding: 24px 20px;
+            }
+
+            .crisis-title {
+                font-size: 20px;
+            }
         }
 
         @media (max-width: 400px) {
@@ -1741,12 +2069,30 @@
 
 <body data-sidebar="expanded" data-density="comfortable" data-bubble="rounded" data-anim="on" data-font="medium">
 
+    <!-- AUTO LOCK SCREEN -->
+    <div id="lockScreen">
+        <div class="lock-avatar"><img src="/logo.png" alt="Nong Fah Logo"></div>
+        <div class="lock-title">ถูกล็อกหน้าจอ</div>
+        <div class="lock-sub">เพื่อความปลอดภัย ระบบทำการล็อกหน้าจออัตโนมัติ<br>เมื่อไม่มีการใช้งานเกิน 15 นาที</div>
+        <button class="unlock-btn" id="unlockBtn">แตะเพื่อปลดล็อก</button>
+    </div>
+
+    <div class="quick-actions">
+        <button class="save-chat-btn" id="saveChatBtn" title="บันทึกประวัติ (ไม่ล้างเมื่อปิดแท็บ)">
+            <i data-lucide="save"></i><span>บันทึก</span>
+        </button>
+        <button class="quick-exit-btn" id="quickExitBtn" title="ออกด่วน (กด Esc 2 ครั้ง)">
+            <i data-lucide="log-out"></i><span>ออกด่วน</span>
+        </button>
+    </div>
+
     <div class="app">
-        <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar" aria-label="แถบด้านข้าง">
             <div class="sidebar-head">
                 <div class="brand">
-                    <div class="brand-avatar" aria-hidden="true">ฟ้า</div>
+                    <div class="brand-avatar avatar" id="sidebarAvatar">
+                        <img src="/logo.png" alt="Nong Fah">
+                    </div>
                     <div class="brand-text">
                         <div class="brand-name">Nong Fah AI</div>
                         <div class="brand-sub">เพื่อนคุยส่วนตัว</div>
@@ -1767,6 +2113,9 @@
             <div class="sidebar-section-label">ประวัติ</div>
             <nav class="chat-list" id="chatList" aria-label="รายการบทสนทนา"></nav>
             <div class="sidebar-foot">
+                <button class="side-btn" id="exportBtn" aria-label="ส่งออกประวัติ">
+                    <i data-lucide="download"></i><span>ส่งออกประวัติ</span>
+                </button>
                 <button class="side-btn" id="settingsBtn" aria-label="ตั้งค่า">
                     <i data-lucide="settings"></i><span>ตั้งค่า</span>
                 </button>
@@ -1781,14 +2130,15 @@
 
         <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-        <!-- MAIN -->
         <main class="main">
             <header class="topbar">
                 <button class="icon-btn mobile-menu" id="mobileMenu" aria-label="เปิดเมนู">
                     <i data-lucide="menu"></i>
                 </button>
                 <div class="topbar-title">
-                    <div class="ai-avatar-sm" id="topAvatar" aria-hidden="true">ฟ้า</div>
+                    <div class="ai-avatar-sm avatar" id="topAvatar">
+                        <img src="/logo.png" alt="Nong Fah">
+                    </div>
                     <div class="topbar-meta">
                         <div class="topbar-name">น้องฟ้า</div>
                         <div class="status">
@@ -1808,7 +2158,8 @@
 
             <section class="chat-scroll" id="chatScroll" aria-live="polite">
                 <div class="welcome" id="welcome">
-                    <div class="welcome-avatar" id="welcomeAvatar">ฟ้า</div>
+                    <!-- ใช้โลโก้เต็มๆ ในหน้า Welcome -->
+                    <img src="/logo.png" alt="Nong Fah AI Logo" class="welcome-logo">
                     <h1 class="welcome-title">สวัสดี 👋</h1>
                     <p class="welcome-desc">
                         ฟ้าอยู่ตรงนี้ ไม่ตัดสิน ไม่บอกว่าควรหรือไม่ควร<br>
@@ -1867,10 +2218,80 @@
                             <i data-lucide="arrow-up"></i>
                         </button>
                     </div>
-                    <div class="composer-note">บทสนทนาไม่ถูกส่งไปบันทึกบนเซิร์ฟเวอร์ · ไม่ต้องบอกชื่อจริง</div>
+                    <div class="composer-note">
+                        ปิดแท็บ = ล้างประวัติอัตโนมัติ · ถ้าอยากเก็บ กดปุ่ม "บันทึก" มุมขวาบน
+                    </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- EXPORT MODAL -->
+    <div class="modal-backdrop" id="exportModal" hidden>
+        <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+            <div class="modal-head">
+                <h2 id="exportTitle">ส่งออกประวัติการสนทนา</h2>
+                <button class="icon-btn" data-close="exportModal" aria-label="ปิด"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-top:0;font-size:14px;color:var(--text-dim);">
+                    หากต้องการนำเรื่องที่คุยกับฟ้าไปปรึกษาคุณหมอ ครู หรือสายด่วน 1323
+                    การมีบันทึกช่วยให้เขาเข้าใจได้เร็วขึ้น</p>
+                <div class="export-options">
+                    <button class="export-card" id="exportTxtBtn">
+                        <div class="export-icon"><i data-lucide="file-text"></i></div>
+                        <div class="export-text">
+                            <h4>ดาวน์โหลดเป็นไฟล์ .txt</h4>
+                            <p>ง่ายต่อการส่งต่อหรือเปิดอ่านบนมือถือ</p>
+                        </div>
+                    </button>
+                    <button class="export-card" id="exportPdfBtn">
+                        <div class="export-icon"><i data-lucide="printer"></i></div>
+                        <div class="export-text">
+                            <h4>พิมพ์ / บันทึกเป็น PDF</h4>
+                            <p>จัดหน้าสวยงาม เหมาะสำหรับพิมพ์หรือแนบไฟล์</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TIER 3 CRISIS OVERLAY -->
+    <div class="crisis-overlay" id="crisisOverlay" hidden>
+        <div class="crisis-box">
+            <div class="crisis-title">คุณกำลังอยู่ในอันตรายหรือเปล่า?</div>
+            <div class="crisis-desc">
+                ถ้าตอนนี้มีคนกำลังทำร้ายคุณ หรือคุณกำลังจะทำร้ายตัวเอง<br>
+                กรุณาโทรหาคนที่ช่วยได้ทันที
+            </div>
+            <div class="crisis-actions">
+                <a href="tel:191" class="crisis-btn police">โทร 191 (ตำรวจ)</a>
+                <a href="tel:1669" class="crisis-btn ems">โทร 1669 (ฉุกเฉินการแพทย์)</a>
+                <a href="tel:1300" class="crisis-btn social">โทร 1300 (ศูนย์ช่วยเหลือสังคม)</a>
+            </div>
+            <button class="crisis-safe-btn" id="crisisSafeBtn">ฉันปลอดภัยแล้ว / กลับไปคุยกับฟ้า</button>
+        </div>
+    </div>
+
+    <!-- FIRST VISIT MODAL -->
+    <div class="modal-backdrop" id="firstVisitModal" hidden>
+        <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="firstVisitTitle">
+            <div class="modal-head">
+                <h2 id="firstVisitTitle">ยินดีต้อนรับสู่พื้นที่ปลอดภัย 🌤️</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-top:0">ฟ้าเป็น AI ไม่ใช่คนจริง แต่ฟ้าพร้อมรับฟังทุกเรื่อง ไม่ตัดสิน ไม่เทศน์</p>
+                <p style="color:var(--danger);font-weight:600">ถ้าอยู่ในอันตรายตอนนี้ โทร 191 หรือ 1669 ทันที</p>
+                <hr style="border:0;border-top:1px solid var(--border);margin:16px 0;">
+                <p style="font-size:13.5px;"><strong>ความเป็นส่วนตัว:</strong> ปิดแท็บ = ล้างประวัติอัตโนมัติ
+                    ถ้าอยากเก็บไว้ กดปุ่ม "บันทึก" มุมขวาบน</p>
+                <p style="font-size:13.5px;"><strong>ออกด่วน:</strong> กดปุ่มสีแดงมุมขวาบน หรือกด Esc 2 ครั้งติดกัน</p>
+            </div>
+            <div class="modal-foot" style="justify-content:center;">
+                <button class="primary-btn" id="firstVisitClose" style="width:100%;">เข้าใจแล้ว เริ่มคุยเลย</button>
+            </div>
+        </div>
     </div>
 
     <!-- SETTINGS MODAL -->
@@ -1942,7 +2363,8 @@
                         <div class="setting-row">
                             <label>อวตาร AI</label>
                             <div class="avatar-choices" data-setting="avatar">
-                                <button data-value="letter" class="active">ฟ้า</button>
+                                <button data-value="logo" class="active"><img src="/logo.png" alt="Logo"></button>
+                                <button data-value="letter">ฟ้า</button>
                                 <button data-value="sparkle">✨</button>
                                 <button data-value="moon">🌙</button>
                                 <button data-value="heart">💙</button>
@@ -1970,7 +2392,7 @@
                     <div class="settings-pane" data-pane="about">
                         <div class="about-block">
                             <h3>Nong Fah AI</h3>
-                            <p class="ver">เวอร์ชัน 1.0</p>
+                            <p class="ver">เวอร์ชัน 2.0 · Frontend</p>
                             <p>เพื่อนคุยสำหรับวัยรุ่นไทย — ไม่ตัดสิน ไม่เทศน์
                                 มีระบบตรวจจับสัญญาณเสี่ยงและแหล่งช่วยเหลือจริง</p>
                             <p class="muted">พัฒนาโดยทีมเล็ก ๆ ที่อยากให้มีใครสักคนรับฟัง</p>
@@ -1998,7 +2420,11 @@
             </div>
             <div class="modal-body">
                 <div class="about-hero">
-                    <div class="welcome-avatar" style="width:56px;height:56px;font-size:18px">ฟ้า</div>
+                    <div class="avatar"
+                        style="width:56px;height:56px;border-radius:12px;background:#fff;border:1px solid var(--border);">
+                        <img src="/logo.png" alt="Logo"
+                            style="object-position: left center; transform: scale(1.4); transform-origin: left center;">
+                    </div>
                     <div>
                         <h3 style="margin:0 0 4px">Nong Fah AI</h3>
                         <p class="muted" style="margin:0">เวอร์ชัน 2.0</p>
@@ -2019,10 +2445,45 @@
         </div>
     </div>
 
-    <!-- TOAST -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script>
+        /* ══════════ PWA SERVICE WORKER ══════════ */
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
+            });
+        }
+
+        /* ══════════ AUTO LOCK SYSTEM ══════════ */
+        (function () {
+            let idleTimer;
+            const lockScreen = document.getElementById('lockScreen');
+            const unlockBtn = document.getElementById('unlockBtn');
+            const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 นาที
+
+            function lockScreenFunc() {
+                lockScreen.classList.add('show');
+            }
+
+            function resetIdleTimer() {
+                if (lockScreen.classList.contains('show')) return;
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(lockScreenFunc, IDLE_TIMEOUT);
+            }
+
+            unlockBtn.addEventListener('click', () => {
+                lockScreen.classList.remove('show');
+                resetIdleTimer();
+            });
+
+            ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+                window.addEventListener(evt, resetIdleTimer, { passive: true });
+            });
+
+            resetIdleTimer();
+        })();
+
         /* ══════════ THEME ══════════ */
         (function () {
             const KEY = 'nf.theme';
@@ -2045,11 +2506,12 @@
         /* ══════════ SETTINGS ══════════ */
         (function () {
             const KEY = 'nf.settings';
-            const defaults = { theme: 'light', language: 'th', fontSize: 'medium', density: 'comfortable', animation: 'on', sidebar: 'expanded', avatar: 'letter', bubble: 'rounded', accent: '#5B7CFA' };
+            const defaults = { theme: 'light', language: 'th', fontSize: 'medium', density: 'comfortable', animation: 'on', sidebar: 'expanded', avatar: 'logo', bubble: 'rounded', accent: '#5B7CFA' };
             let current = { ...defaults };
             function load() { try { const raw = localStorage.getItem(KEY); if (raw) current = { ...defaults, ...JSON.parse(raw) }; } catch { } return current; }
             function save() { try { localStorage.setItem(KEY, JSON.stringify(current)); } catch { } }
-            const AVATAR_MAP = { letter: 'ฟ้า', sparkle: '✨', moon: '🌙', heart: '💙' };
+            const AVATAR_MAP = { logo: '/logo.png', letter: 'ฟ้า', sparkle: '✨', moon: '🌙', heart: '💙' };
+
             function applyAll() {
                 const body = document.body;
                 body.setAttribute('data-density', current.density);
@@ -2058,8 +2520,19 @@
                 body.setAttribute('data-font', current.fontSize);
                 body.setAttribute('data-sidebar', current.sidebar);
                 document.documentElement.style.setProperty('--accent', current.accent);
-                const label = AVATAR_MAP[current.avatar] || 'ฟ้า';
-                document.querySelectorAll('.brand-avatar, .ai-avatar-sm, .welcome-avatar, .row-avatar').forEach((el) => { el.textContent = label; });
+
+                // อัปเดตอวตารทุกตัวในหน้าเว็บ
+                const avatarVal = AVATAR_MAP[current.avatar];
+                document.querySelectorAll('.brand-avatar, .ai-avatar-sm').forEach((el) => {
+                    if (current.avatar === 'logo') {
+                        el.innerHTML = `<img src="${avatarVal}" alt="Logo">`;
+                        el.classList.remove('text-avatar');
+                    } else {
+                        el.textContent = avatarVal;
+                        el.classList.add('text-avatar');
+                    }
+                });
+
                 if (window.Theme) window.Theme.set(current.theme);
             }
             function set(key, value) { if (current[key] === value) return; current[key] = value; save(); applyAll(); syncUI(); }
@@ -2116,10 +2589,23 @@
             function scrollBottom() { requestAnimationFrame(() => { chatScroll.scrollTop = chatScroll.scrollHeight; }); }
             function icons() { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); }
 
+            function getAvatarHTML() {
+                if (window.Settings) {
+                    const av = window.Settings.get().avatar;
+                    if (av === 'logo') return `<img src="/logo.png" alt="Logo">`;
+                    const map = { letter: 'ฟ้า', sparkle: '✨', moon: '🌙', heart: '💙' };
+                    return map[av] || 'ฟ้า';
+                }
+                return `<img src="/logo.png" alt="Logo">`;
+            }
+
             function renderBot(content, ts) {
                 const row = document.createElement('div'); row.className = 'row bot'; row.dataset.ts = ts || Date.now();
-                const avatar = document.createElement('div'); avatar.className = 'row-avatar'; avatar.textContent = 'ฟ้า';
-                if (window.Settings) { const map = { letter: 'ฟ้า', sparkle: '✨', moon: '🌙', heart: '💙' }; avatar.textContent = map[window.Settings.get().avatar] || 'ฟ้า'; }
+                const avatar = document.createElement('div'); avatar.className = 'row-avatar avatar';
+                const avatarContent = getAvatarHTML();
+                if (avatarContent.includes('<img')) { avatar.innerHTML = avatarContent; }
+                else { avatar.textContent = avatarContent; avatar.classList.add('text-avatar'); avatar.style.background = 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)'; avatar.style.border = 'none'; }
+
                 const wrap = document.createElement('div'); wrap.className = 'bubble-wrap';
                 const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.innerHTML = renderMarkdown(content);
                 const actions = document.createElement('div'); actions.className = 'msg-actions';
@@ -2149,8 +2635,11 @@
             }
             function renderTyping() {
                 const row = document.createElement('div'); row.className = 'row bot'; row.id = 'typingRow';
-                const avatar = document.createElement('div'); avatar.className = 'row-avatar'; avatar.textContent = 'ฟ้า';
-                if (window.Settings) { const map = { letter: 'ฟ้า', sparkle: '✨', moon: '🌙', heart: '💙' }; avatar.textContent = map[window.Settings.get().avatar] || 'ฟ้า'; }
+                const avatar = document.createElement('div'); avatar.className = 'row-avatar avatar';
+                const avatarContent = getAvatarHTML();
+                if (avatarContent.includes('<img')) { avatar.innerHTML = avatarContent; }
+                else { avatar.textContent = avatarContent; avatar.classList.add('text-avatar'); avatar.style.background = 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)'; avatar.style.border = 'none'; }
+
                 const wrap = document.createElement('div'); wrap.className = 'bubble-wrap';
                 const bubble = document.createElement('div'); bubble.className = 'bubble typing-bubble';
                 for (let i = 0; i < 3; i++) { const d = document.createElement('span'); d.className = 'typing-dot'; bubble.appendChild(d); }
@@ -2185,8 +2674,138 @@
             const sendBtn = document.getElementById('sendBtn');
             const chatListEl = document.getElementById('chatList');
             const searchEl = document.getElementById('searchInput');
+            const crisisOverlay = document.getElementById('crisisOverlay');
+            const exportModal = document.getElementById('exportModal');
             let sessionId = null, conversations = [], currentId = null, busy = false;
 
+            /* ── First Visit Modal ── */
+            const firstVisitModal = document.getElementById('firstVisitModal');
+            if (!localStorage.getItem('nf.visited')) {
+                firstVisitModal.hidden = false;
+                document.body.style.overflow = 'hidden';
+            }
+            document.getElementById('firstVisitClose').addEventListener('click', () => {
+                firstVisitModal.hidden = true;
+                document.body.style.overflow = '';
+                localStorage.setItem('nf.visited', '1');
+            });
+
+            /* ── Tier 3 Crisis Overlay ── */
+            function showCrisisOverlay() { crisisOverlay.hidden = false; }
+            document.getElementById('crisisSafeBtn').addEventListener('click', () => { crisisOverlay.hidden = true; });
+
+            /* ── Quick Exit & Persistence ── */
+            function quickExit() {
+                try {
+                    localStorage.clear(); sessionStorage.clear();
+                    document.cookie.split(";").forEach(function (c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); });
+                } catch (e) { }
+                window.location.replace('https://www.google.com');
+            }
+            document.getElementById('quickExitBtn').addEventListener('click', quickExit);
+            document.getElementById('saveChatBtn').addEventListener('click', () => {
+                try { sessionStorage.setItem('nf.persist', '1'); ChatUI.toast('บันทึกประวัติลงเครื่องแล้ว (จะไม่ล้างเมื่อปิดแท็บ)'); }
+                catch (e) { ChatUI.toast('บันทึกไม่สำเร็จ'); }
+            });
+            let lastEsc = 0;
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const now = Date.now(); if (now - lastEsc < 600) { quickExit(); } lastEsc = now;
+                }
+            });
+            function clearOnExit() { if (!sessionStorage.getItem('nf.persist')) { localStorage.removeItem(CONV_KEY); localStorage.removeItem(CURRENT_KEY); } }
+            window.addEventListener('pagehide', clearOnExit);
+            window.addEventListener('beforeunload', clearOnExit);
+
+            /* ── Export Features ── */
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                const conv = currentConv();
+                if (!conv || !conv.messages.length) {
+                    ChatUI.toast('ยังไม่มีบทสนทนาให้ส่งออก');
+                    return;
+                }
+                exportModal.hidden = false;
+                closeDrawerIfMobile();
+            });
+
+            document.getElementById('exportTxtBtn').addEventListener('click', () => {
+                const conv = currentConv();
+                let text = `บันทึกการสนทนากับน้องฟ้า (Nong Fah AI)\n`;
+                text += `วันที่ส่งออก: ${new Date().toLocaleString('th-TH')}\n`;
+                text += `========================================\n\n`;
+
+                conv.messages.forEach(m => {
+                    const time = new Date(m.ts).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    const role = m.role === 'user' ? 'ฉัน' : 'น้องฟ้า';
+                    text += `[${time}] ${role}:\n${m.content}\n\n`;
+                });
+
+                const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `nongfah-chat-${new Date().toISOString().slice(0, 10)}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+                exportModal.hidden = true;
+            });
+
+            document.getElementById('exportPdfBtn').addEventListener('click', () => {
+                const conv = currentConv();
+                const printWindow = window.open('', '_blank');
+                let html = `
+      <html><head><title>Nong Fah AI - Chat Export</title>
+      <style>
+        body { font-family: "Sarabun", -apple-system, sans-serif; padding: 40px; line-height: 1.6; color: #1A1D23; max-width: 800px; margin: 0 auto; }
+        h1 { font-size: 24px; border-bottom: 2px solid #E8E3D8; padding-bottom: 10px; }
+        .meta { color: #6B7280; font-size: 14px; margin-bottom: 30px; }
+        .msg { margin-bottom: 20px; page-break-inside: avoid; }
+        .user { color: #5B7CFA; font-weight: bold; }
+        .bot { color: #8B5CF6; font-weight: bold; }
+        .time { font-size: 12px; color: #9CA3AF; margin-left: 10px; font-weight: normal; }
+        .text { margin-top: 5px; white-space: pre-wrap; }
+        .resources { background: #FEF2F2; border: 1px solid #FECACA; padding: 10px; border-radius: 8px; margin-top: 10px; color: #B91C1C; font-size: 14px; }
+      </style></head><body>
+      <h1>บันทึกการสนทนากับน้องฟ้า (Nong Fah AI)</h1>
+      <div class="meta">วันที่ส่งออก: ${new Date().toLocaleString('th-TH')}</div>
+    `;
+
+                conv.messages.forEach(m => {
+                    const time = new Date(m.ts).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    const role = m.role === 'user' ? 'ฉัน' : 'น้องฟ้า';
+                    const cls = m.role;
+                    const content = m.content.replace(/\n/g, '<br>');
+
+                    html += `<div class="msg"><span class="${cls}">${role}</span><span class="time">${time}</span><div class="text">${content}</div>`;
+
+                    if (m.resources && m.resources.length) {
+                        html += `<div class="resources"><strong>สายด่วนที่แนบมา:</strong><br>`;
+                        m.resources.forEach(r => {
+                            html += `${r.name} (${r.phone})<br>`;
+                        });
+                        html += `</div>`;
+                    }
+                    html += `</div>`;
+                });
+
+                html += `</body></html>`;
+                printWindow.document.write(html);
+                printWindow.document.close();
+
+                setTimeout(() => {
+                    printWindow.focus();
+                    printWindow.print();
+                }, 500);
+
+                exportModal.hidden = true;
+            });
+
+            document.querySelectorAll('[data-close]').forEach((btn) => {
+                btn.addEventListener('click', () => { const id = btn.dataset.close; const m = document.getElementById(id); if (m) m.hidden = true; });
+            });
+            [exportModal].forEach((m) => { m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; }); });
+
+            /* ── Main Logic ── */
             function loadConversations() {
                 try { const raw = localStorage.getItem(CONV_KEY); conversations = raw ? JSON.parse(raw) : []; } catch { conversations = []; }
                 try { currentId = localStorage.getItem(CURRENT_KEY) || null; } catch { currentId = null; }
@@ -2257,6 +2876,9 @@
                 busy = true; sendBtn.disabled = true; ChatUI.renderTyping();
                 try {
                     const data = await sendToServer(conv, text); ChatUI.removeTyping();
+
+                    if (data.crisis_tier >= 3) { showCrisisOverlay(); }
+
                     if (data.rateLimited) {
                         const botTs = Date.now(); const reply = 'ใจเย็น ๆ นะ ฟ้าขอหายใจก่อน พิมพ์ช้า ๆ ก็ได้';
                         conv.messages.push({ role: 'assistant', content: reply, ts: botTs }); saveConversations(); ChatUI.renderBot(reply, botTs); return;
@@ -2265,7 +2887,8 @@
                     conv.messages.push({ role: 'assistant', content: reply, ts: botTs, resources }); conv.updated = Date.now(); saveConversations();
                     ChatUI.renderBot(reply, botTs); if (resources.length) ChatUI.renderResources(resources); renderChatList();
                 } catch (e) {
-                    ChatUI.removeTyping(); const fallback = 'ฟ้าขอโทษ ระบบมีปัญหานิดหน่อย ลองพิมพ์อีกครั้งได้ไหม';
+                    ChatUI.removeTyping();
+                    const fallback = 'ฟ้ายังอยู่นี่ แต่ตอนนี้เชื่อมต่อไม่ได้ ถ้าเร่งด่วนโทร 1323 ได้เลย';
                     const botTs = Date.now(); conv.messages.push({ role: 'assistant', content: fallback, ts: botTs }); saveConversations(); ChatUI.renderBot(fallback, botTs);
                 } finally { busy = false; sendBtn.disabled = !inputEl.value.trim(); inputEl.focus(); }
             }
@@ -2308,6 +2931,9 @@
                 e.preventDefault(); currentId = item.dataset.id; saveConversations(); renderAll();
             });
             searchEl.addEventListener('input', renderChatList);
+
+            inputEl.addEventListener('focus', () => { setTimeout(() => ChatUI.scrollBottom(), 300); });
+            window.addEventListener('resize', () => { ChatUI.scrollBottom(); });
 
             function autoResize() { inputEl.style.height = 'auto'; inputEl.style.height = Math.min(180, inputEl.scrollHeight) + 'px'; }
             inputEl.addEventListener('input', () => { autoResize(); sendBtn.disabled = busy || !inputEl.value.trim(); });
