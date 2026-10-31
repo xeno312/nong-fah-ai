@@ -92,10 +92,16 @@ function isFallbackMode() {
 // ── ระบบสรุปความจำระยะยาว (Summarization) ──
 async function summarize(messages) {
     const { base, key, model } = readConfig();
-    if (isFallbackMode()) return "[โหมดออฟไลน์: ไม่สามารถสรุปได้]";
 
-    const textToSummarize = messages.map(m => `${m.role}: ${m.content}`).join('\n');
-    const prompt = `จงสรุปเรื่องราวและอารมณ์สำคัญของผู้ใช้จากบทสนทนานี้ให้สั้นที่สุด (ไม่เกิน 2 ประโยค) โดยเก็บเฉพาะข้อมูลสำคัญที่จำเป็นสำหรับการคุยต่อในอนาคต (เช่น ชื่อ, ปัญหา, สถานะ, ความรู้สึก, สิ่งที่เคยแนะนำไปแล้ว) ห้ามมีคำเกริ่นนำ ให้ตอบเป็นภาษาไทย:\n\n${textToSummarize}`;
+    // สร้าง Raw Text ไว้เป็น Fallback เผื่อ API ล่ม
+    const rawText = messages.map(m => `${m.role === 'user' ? 'ผู้ใช้' : 'ฟ้า'}: ${m.content}`).join('\n');
+    const safeRawText = rawText.length > 800 ? rawText.slice(-800) + '\n...[ตัดข้อความเพื่อประหยัดพื้นที่]' : rawText;
+
+    if (isFallbackMode()) {
+        return `[สรุปจากระบบ]:\n${safeRawText}`;
+    }
+
+    const prompt = `จงสรุปเรื่องราวและอารมณ์สำคัญของผู้ใช้จากบทสนทนานี้ให้สั้นที่สุด (ไม่เกิน 2 ประโยค) โดยเก็บเฉพาะข้อมูลสำคัญที่จำเป็นสำหรับการคุยต่อในอนาคต (เช่น ชื่อ, ปัญหา, สถานะ, ความรู้สึก, สิ่งที่เคยแนะนำไปแล้ว) ห้ามมีคำเกริ่นนำ ให้ตอบเป็นภาษาไทย:\n\n${rawText}`;
 
     try {
         const res = await fetch(`${base}/chat/completions`, {
@@ -103,11 +109,16 @@ async function summarize(messages) {
             headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: 150 }),
         });
-        if (!res.ok) throw new Error();
+
+        if (!res.ok) throw new Error('API Error');
         const data = await res.json();
-        return data.choices[0].message.content.trim();
-    } catch {
-        return "[ไม่สามารถสรุปความจำได้ในขณะนี้]";
+        const text = data.choices[0].message.content.trim();
+        if (!text) throw new Error('Empty response');
+        return text;
+    } catch (e) {
+        console.warn(`[Summarize Fallback] API failed: ${e.message}. Using local extraction.`);
+        // ถ้า API ล่ม ให้ใช้ Raw Text ที่ตัดทอนแล้วแทน เพื่อไม่ให้สูญเสียบริบท
+        return `[สรุปจากระบบ]:\n${safeRawText}`;
     }
 }
 

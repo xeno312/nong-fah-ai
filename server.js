@@ -15,8 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const SESSIONS = new Map();
 const SESSION_TTL_MS = 60 * 60 * 1000;
-const MAX_TURNS = 20; // สรุปเมื่อเกิน 20 ข้อความ
-const KEEP_TURNS = 10; // เก็บ 10 ข้อความล่าสุดไว้
+const MAX_TURNS = 20;
+const KEEP_TURNS = 10;
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT = 20;
 const RATE_BUCKETS = new Map();
@@ -64,18 +64,17 @@ app.post('/api/chat', async (req, res) => {
     sess.last = Date.now();
     if (province) sess.province = province;
 
-    // 1. ตรวจสอบและจัดการ Memory (Summarization)
+    // 1. ระบบ Summarization (Local Fallback included)
     if (sess.history.length >= MAX_TURNS) {
         const toSummarize = sess.history.slice(0, MAX_TURNS - KEEP_TURNS);
-        try {
-            const newSummary = await llm.summarize(toSummarize);
-            sess.summary = sess.summary ? `${sess.summary}\n- ${newSummary}` : newSummary;
-            sess.history = sess.history.slice(MAX_TURNS - KEEP_TURNS);
-        } catch (e) {
-            console.error('Summarization error:', e.message);
-            // ถ้าสรุปพลาด ให้ตัดทิ้งไปเลยเพื่อป้องกัน context บวม
-            sess.history = sess.history.slice(MAX_TURNS - KEEP_TURNS);
-        }
+
+        // llm.summarize จะไม่ throw error แต่จะ return ข้อความ Fallback กลับมาเสมอ
+        const newSummary = await llm.summarize(toSummarize);
+
+        sess.summary = sess.summary ? `${sess.summary}\n- ${newSummary}` : newSummary;
+
+        // ตัดประวัติเก่าออก แต่ตอนนี้เรามี summary ที่ปลอดภัยแล้ว
+        sess.history = sess.history.slice(MAX_TURNS - KEEP_TURNS);
     }
 
     const base = crisis.detect(message);
@@ -92,7 +91,6 @@ app.post('/api/chat', async (req, res) => {
 
     let reply;
     try {
-        // ส่ง summary ไปให้ LLM ด้วยเพื่อให้มันจำบริบทเก่าได้
         reply = await llm.chat(trimmed, effectiveTier, sess.summary);
     } catch (e) {
         console.error(`[llm error] ${e.message}`);
