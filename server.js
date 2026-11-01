@@ -64,16 +64,18 @@ app.post('/api/chat', async (req, res) => {
     sess.last = Date.now();
     if (province) sess.province = province;
 
-    // 1. ระบบ Summarization (Local Fallback included)
+    // 1. ระบบ Summarization (พร้อม Fallback & Limit ป้องกัน Overflow)
     if (sess.history.length >= MAX_TURNS) {
         const toSummarize = sess.history.slice(0, MAX_TURNS - KEEP_TURNS);
-
-        // llm.summarize จะไม่ throw error แต่จะ return ข้อความ Fallback กลับมาเสมอ
         const newSummary = await llm.summarize(toSummarize);
 
         sess.summary = sess.summary ? `${sess.summary}\n- ${newSummary}` : newSummary;
 
-        // ตัดประวัติเก่าออก แต่ตอนนี้เรามี summary ที่ปลอดภัยแล้ว
+        // 🔥 FIX: ป้องกัน Context Window บวมเกิน 1,500 ตัวอักษร
+        if (sess.summary.length > 1500) {
+            sess.summary = sess.summary.slice(-1500);
+        }
+
         sess.history = sess.history.slice(MAX_TURNS - KEEP_TURNS);
     }
 

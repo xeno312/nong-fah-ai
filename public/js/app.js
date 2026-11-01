@@ -35,10 +35,21 @@
         try { const raw = localStorage.getItem(CONV_KEY); conversations = raw ? JSON.parse(raw) : []; } catch { conversations = []; }
         try { currentId = localStorage.getItem(CURRENT_KEY) || null; } catch { currentId = null; }
     }
+
     function saveConversations() {
-        try { localStorage.setItem(CONV_KEY, JSON.stringify(conversations)); } catch { }
+        try {
+            localStorage.setItem(CONV_KEY, JSON.stringify(conversations));
+        } catch (e) {
+            // 🔥 FIX: จัดการเมื่อ LocalStorage เต็ม
+            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                ChatUI.toast('พื้นที่จัดเก็บเต็ม กำลังลบประวัติเก่า...');
+                conversations = conversations.slice(0, 20); // เก็บไว้แค่ 20 ห้องล่าสุด
+                try { localStorage.setItem(CONV_KEY, JSON.stringify(conversations)); } catch { }
+            }
+        }
         try { if (currentId) localStorage.setItem(CURRENT_KEY, currentId); else localStorage.removeItem(CURRENT_KEY); } catch { }
     }
+
     function newConversation() {
         const id = 'c-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         const conv = { id, sessionId: null, title: 'บทสนทนาใหม่', messages: [], updated: Date.now() };
@@ -87,13 +98,28 @@
 
     async function sendToServer(conv, message) {
         const sid = await ensureSession(conv);
-        const r = await fetch('/api/chat', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sid, message })
-        });
-        if (r.status === 429) return { rateLimited: true };
-        if (!r.ok) throw new Error('API Error ' + r.status);
-        return r.json();
+
+        // 🔥 FIX: เพิ่ม Timeout 30 วินาที ป้องกัน Typing ค้าง
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        try {
+            const r = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sid, message }),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (r.status === 429) return { rateLimited: true };
+            if (!r.ok) throw new Error('API Error ' + r.status);
+            return r.json();
+        } catch (e) {
+            clearTimeout(timeoutId);
+            if (e.name === 'AbortError') throw new Error('Request timeout');
+            throw e;
+        }
     }
 
     // ── Send Message Logic ──
@@ -108,6 +134,10 @@
 
         const userTs = Date.now();
         conv.messages.push({ role: 'user', content: text, ts: userTs });
+
+        // 🔥 FIX: จำกัดข้อความในห้องไม่ให้เกิน 100 ข้อความ
+        if (conv.messages.length > 100) conv.messages = conv.messages.slice(-100);
+
         conv.updated = Date.now(); saveConversations();
 
         ChatUI.renderUser(text, userTs);
@@ -119,7 +149,6 @@
         inputEl.disabled = true;
         ChatUI.renderTyping();
 
-        // FIX RACE CONDITION: Keep a reference to the active conv
         const activeConv = conv;
 
         try {
@@ -145,7 +174,6 @@
             activeConv.updated = Date.now();
             saveConversations();
 
-            // Only render if the user is still looking at this conversation
             if (activeConv.id === currentId) {
                 ChatUI.removeTyping();
                 if (data.crisis_tier >= 3) crisisOverlay.hidden = false;
@@ -156,7 +184,10 @@
 
         } catch (e) {
             console.error(e);
-            const fallback = 'ฟ้ายังอยู่นี่ แต่ตอนนี้เชื่อมต่อไม่ได้ ถ้าเร่งด่วนโทร 1323 ได้เลย';
+            const fallback = e.message === 'Request timeout'
+                ? 'ฟ้ารอนานเกินไปแล้ว แต่ยังอยู่นี่นะ ลองพิมพ์อีกครั้งได้ไหม'
+                : 'ฟ้ายังอยู่นี่ แต่ตอนนี้เชื่อมต่อไม่ได้ ถ้าเร่งด่วนโทร 1323 ได้เลย';
+
             const botTs = Date.now();
             activeConv.messages.push({ role: 'assistant', content: fallback, ts: botTs });
             saveConversations();
@@ -235,7 +266,7 @@
     inputEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            if (busy) return; // FIX duplicate send
+            if (busy) return;
             if (!sendBtn.disabled) sendMessage();
         }
     });
@@ -245,10 +276,16 @@
     // ── Quick Exit & Actions ──
     function quickExit() {
         try {
-            // FIX: Only clear app-specific keys
             const keys = ['nf.theme', 'nf.settings', 'nf.conversations', 'nf.current', 'nf.visited', 'nf.pin'];
             keys.forEach(k => localStorage.removeItem(k));
             sessionStorage.removeItem('nf.persist');
+
+            // 🔥 FIX: ล้าง Cache ของ PWA ด้วย
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                });
+            }
         } catch (e) { }
         window.location.replace('https://www.google.com');
     }
@@ -275,7 +312,7 @@
     window.addEventListener('pagehide', clearOnExit);
     window.addEventListener('beforeunload', clearOnExit);
 
-    // ── Export Features (XSS Fixed) ──
+    // ── Export Features ──
     document.getElementById('exportBtn').addEventListener('click', () => {
         const conv = currentConv();
         if (!conv || !conv.messages.length) { ChatUI.toast('ยังไม่มีบทสนทนาให้ส่งออก'); return; }
@@ -300,7 +337,6 @@
         const conv = currentConv();
         const printWindow = window.open('', '_blank');
 
-        // FIX: Apply Utils.esc() to all dynamic content
         let html = `
       <html><head><title>Nong Fah AI - Chat Export</title>
       <style>
@@ -322,7 +358,6 @@
             const time = new Date(m.ts).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
             const role = m.role === 'user' ? 'ฉัน' : 'น้องฟ้า';
             const cls = m.role;
-            // Fix XSS: Escape content before replacing newlines
             const content = window.Utils.esc(m.content).replace(/\n/g, '<br>');
 
             html += `<div class="msg"><span class="${cls}">${role}</span><span class="time">${time}</span><div class="text">${content}</div>`;
@@ -352,7 +387,14 @@
         m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; });
     });
 
-    document.getElementById('newChatBtn').addEventListener('click', () => { if (busy) return; newConversation(); renderAll(); inputEl.focus(); closeDrawerIfMobile(); });
+    // 🔥 FIX: ปลดล็อก New Chat ให้กดได้เสมอ
+    document.getElementById('newChatBtn').addEventListener('click', () => {
+        newConversation();
+        renderAll();
+        inputEl.focus();
+        closeDrawerIfMobile();
+    });
+
     document.getElementById('quickCards').addEventListener('click', (e) => {
         const card = e.target.closest('.quick-card'); if (!card) return;
         inputEl.value = card.dataset.prompt; autoResize(); sendMessage();
