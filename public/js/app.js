@@ -71,7 +71,12 @@
     }
     function renderChatList() {
         const q = searchEl.value.trim().toLowerCase(); chatListEl.innerHTML = '';
-        const list = conversations.filter((c) => !q || c.title.toLowerCase().includes(q));
+        const list = conversations.filter((c) => {
+            if (!q) return true;
+            if (c.title && c.title.toLowerCase().includes(q)) return true;
+            if (Array.isArray(c.messages) && c.messages.some((m) => m.content && m.content.toLowerCase().includes(q))) return true;
+            return false;
+        });
         if (!list.length) {
             const empty = document.createElement('div'); empty.className = 'chat-list-empty'; empty.textContent = q ? 'ไม่พบผลลัพธ์' : 'ยังไม่มีบทสนทนา'; chatListEl.appendChild(empty); return;
         }
@@ -205,6 +210,10 @@
     document.getElementById('messages').addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
+        if (busy) {
+            ChatUI.toast('กรุณารอน้องฟ้าตอบสักครู่');
+            return;
+        }
         const row = btn.closest('.row');
         if (!row) return;
         const conv = currentConv();
@@ -452,9 +461,87 @@
     function closeDrawerIfMobile() { if (window.matchMedia('(max-width: 768px)').matches) document.body.classList.remove('drawer-open'); }
     document.getElementById('mobileMenu').addEventListener('click', () => document.body.classList.add('drawer-open'));
     overlay.addEventListener('click', closeDrawerIfMobile);
+    // ── Sidebar Collapse & Icon ──
+    function updateSidebarCollapseIcon(sidebarState) {
+        const btn = document.getElementById('sidebarCollapse');
+        if (!btn) return;
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.setAttribute('data-lucide', sidebarState === 'collapsed' ? 'panel-left-open' : 'panel-left-close');
+            if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+        }
+    }
+
     document.getElementById('sidebarCollapse').addEventListener('click', () => {
-        const s = window.Settings.get(); window.Settings.set('sidebar', s.sidebar === 'collapsed' ? 'expanded' : 'collapsed');
+        const s = window.Settings.get();
+        const nextState = s.sidebar === 'collapsed' ? 'expanded' : 'collapsed';
+        window.Settings.set('sidebar', nextState);
+        updateSidebarCollapseIcon(nextState);
     });
+
+    // ── Voice Input (Speech to Text) ──
+    const micBtn = document.getElementById('micBtn');
+    let recognition = null;
+    let isRecording = false;
+
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRec();
+        recognition.lang = 'th-TH';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+            isRecording = true;
+            if (micBtn) {
+                micBtn.classList.add('recording');
+                micBtn.style.color = 'var(--danger)';
+            }
+            ChatUI.toast('กำลังฟังเสียง... พูดได้เลย');
+        };
+
+        recognition.onresult = (evt) => {
+            const transcript = evt.results?.[0]?.[0]?.transcript;
+            if (transcript) {
+                inputEl.value = (inputEl.value ? inputEl.value + ' ' : '') + transcript;
+                autoResize();
+                sendBtn.disabled = !inputEl.value.trim();
+                inputEl.focus();
+            }
+        };
+
+        recognition.onerror = () => {
+            isRecording = false;
+            if (micBtn) {
+                micBtn.classList.remove('recording');
+                micBtn.style.color = '';
+            }
+            ChatUI.toast('ไม่สามารถรับเสียงได้ กรุณาลองใหม่');
+        };
+
+        recognition.onend = () => {
+            isRecording = false;
+            if (micBtn) {
+                micBtn.classList.remove('recording');
+                micBtn.style.color = '';
+            }
+        };
+
+        if (micBtn) {
+            micBtn.addEventListener('click', () => {
+                if (isRecording) {
+                    recognition.stop();
+                } else {
+                    try { recognition.start(); }
+                    catch { recognition.stop(); }
+                }
+            });
+        }
+    } else if (micBtn) {
+        micBtn.addEventListener('click', () => {
+            ChatUI.toast('เบราว์เซอร์นี้ไม่รองรับการพิมพ์ด้วยเสียง (แนะนำ Chrome หรือ Edge)');
+        });
+    }
 
     const settingsModal = document.getElementById('settingsModal');
     const aboutModal = document.getElementById('aboutModal');
@@ -503,6 +590,7 @@
 
         const initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
         updateThemeUI(initialTheme);
+        updateSidebarCollapseIcon(window.Settings.get().sidebar);
 
         if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
         document.addEventListener('nf:theme', (e) => {

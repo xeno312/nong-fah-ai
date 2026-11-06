@@ -598,6 +598,7 @@ body.drawer-open .sidebar-overlay {
 .topbar {
     height: 60px;
     padding: 0 20px;
+    padding-right: 220px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -842,6 +843,7 @@ body.drawer-open .sidebar-overlay {
     border-radius: 18px;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    white-space: pre-wrap;
     line-height: 1.55;
     font-size: 15px;
     position: relative;
@@ -2032,6 +2034,12 @@ body.drawer-open .sidebar-overlay {
     }
 }
 
+@media (hover: none), (max-width: 768px) {
+    .msg-actions {
+        opacity: 1;
+    }
+}
+
 @media (max-width: 400px) {
     .quick-cards {
         grid-template-columns: 1fr;
@@ -2039,9 +2047,5 @@ body.drawer-open .sidebar-overlay {
 
     .bubble-wrap {
         max-width: 92%;
-    }
-
-    .msg-actions {
-        opacity: 1;
     }
 }

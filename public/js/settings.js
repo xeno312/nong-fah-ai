@@ -36,6 +36,14 @@ window.Settings = (function () {
         body.setAttribute('data-font', current.fontSize);
         body.setAttribute('data-sidebar', current.sidebar);
         document.documentElement.style.setProperty('--accent', current.accent);
+        let hex = current.accent.replace('#', '');
+        if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+            document.documentElement.style.setProperty('--accent-soft', `rgba(${r}, ${g}, ${b}, 0.15)`);
+        }
 
         const avatarVal = AVATAR_MAP[current.avatar];
         document.querySelectorAll('.brand-avatar, .ai-avatar-sm').forEach((el) => {
