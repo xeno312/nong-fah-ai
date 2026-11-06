@@ -26,13 +26,25 @@ function cleanupSessions() {
     for (const [sid, s] of SESSIONS) {
         if (now - s.last > SESSION_TTL_MS) SESSIONS.delete(sid);
     }
+    // Clean up expired rate buckets to prevent memory leaks
+    for (const [sid, bucket] of RATE_BUCKETS) {
+        const fresh = bucket.filter((t) => now - t <= RATE_WINDOW_MS);
+        if (fresh.length === 0) RATE_BUCKETS.delete(sid);
+        else RATE_BUCKETS.set(sid, fresh);
+    }
 }
+
+// Periodic cleanup every 5 minutes
+setInterval(cleanupSessions, 5 * 60 * 1000);
 
 function rateOk(sid) {
     const now = Date.now();
     const bucket = RATE_BUCKETS.get(sid) || [];
     const fresh = bucket.filter((t) => now - t <= RATE_WINDOW_MS);
-    if (fresh.length >= RATE_LIMIT) { RATE_BUCKETS.set(sid, fresh); return false; }
+    if (fresh.length >= RATE_LIMIT) {
+        RATE_BUCKETS.set(sid, fresh);
+        return false;
+    }
     fresh.push(now);
     RATE_BUCKETS.set(sid, fresh);
     return true;
@@ -40,7 +52,7 @@ function rateOk(sid) {
 
 app.post('/api/new-session', (req, res) => {
     const sid = crypto.randomBytes(24).toString('base64url');
-    SESSIONS.set(sid, { history: [], summary: '', last: Date.now(), province: null, alertedAt: 0 });
+    SESSIONS.set(sid, { history: [], summary: '', last: Date.now(), province: null, alertedAt: 0, turnCount: 0 });
     res.json({ session_id: sid });
 });
 
@@ -58,20 +70,20 @@ app.post('/api/chat', async (req, res) => {
 
     let sess = SESSIONS.get(sid);
     if (!sess) {
-        sess = { history: [], summary: '', last: Date.now(), province, alertedAt: 0 };
+        sess = { history: [], summary: '', last: Date.now(), province, alertedAt: 0, turnCount: 0 };
         SESSIONS.set(sid, sess);
     }
     sess.last = Date.now();
+    sess.turnCount = (sess.turnCount || 0) + 1;
     if (province) sess.province = province;
 
-    // 1. ระบบ Summarization (พร้อม Fallback & Limit ป้องกัน Overflow)
+    // 1. Summarization with overflow limit
     if (sess.history.length >= MAX_TURNS) {
         const toSummarize = sess.history.slice(0, MAX_TURNS - KEEP_TURNS);
         const newSummary = await llm.summarize(toSummarize);
 
         sess.summary = sess.summary ? `${sess.summary}\n- ${newSummary}` : newSummary;
 
-        // 🔥 FIX: ป้องกัน Context Window บวมเกิน 1,500 ตัวอักษร
         if (sess.summary.length > 1500) {
             sess.summary = sess.summary.slice(-1500);
         }
@@ -96,12 +108,7 @@ app.post('/api/chat', async (req, res) => {
         reply = await llm.chat(trimmed, effectiveTier, sess.summary);
     } catch (e) {
         console.error(`[llm error] ${e.message}`);
-        return res.json({
-            reply: 'ฟ้าขอโทษ ระบบมีปัญหานิดหน่อย ถ้าเร่งด่วนโทร 1323 ได้เลย เขาพร้อมฟังตลอด 24 ชั่วโมง',
-            crisis_tier: effectiveTier,
-            resources: resources.acuteBundle(sess.province),
-            suggest_restart: false,
-        });
+        reply = llm.fallbackReply(message, effectiveTier);
     }
 
     sess.history.push({ role: 'assistant', content: reply });
@@ -114,7 +121,7 @@ app.post('/api/chat', async (req, res) => {
         reply,
         crisis_tier: effectiveTier,
         resources: attached,
-        suggest_restart: sess.history.length >= MAX_TURNS * 2,
+        suggest_restart: sess.turnCount >= 25,
     });
 });
 

@@ -2,11 +2,12 @@ const { detectStyle } = require('./tone');
 const { guard } = require('./output_guard');
 
 function analyzeIntent(text) {
-    const t = (text || '').toLowerCase();
+    const t = (text || '').toLowerCase().trim();
+    if (/ช่วยด้วย|ไม่ไหวแล้ว|ช่วยหนูที|ช่วยผมที|ทนไม่ไหว|จะบ้าตาย|เจ็บปวด/.test(t)) return 'vent';
     if (/ทำไงดี|ทำยังไง|ควรทำ|แนะนำ|ช่วยคิด|ปรึกษา|มีวิธี|แก้ยังไง|จะทำอะไรได้บ้าง|ทำยังไงต่อ/.test(t)) return 'advice';
     if (/คืออะไร|หมายถึง|ต่างกันยังไง|คือใคร|อยู่ที่ไหน|กี่โมง|กี่บาท|เท่าไหร่|จริงไหม|ใช่ไหม|หรือเปล่า/.test(t)) return 'info';
-    if (text.length > 60 || /เศร้า|เหนื่อย|ท้อ|ร้องไห้|เจ็บ|แย่|แย่มาก|ไม่ไหว|ทนไม่ได้/.test(t)) return 'vent';
-    if (text.length < 15 || /สวัสดี|ดีจ้า|ว่าไง|เป็นไง|555|55/.test(t)) return 'chitchat';
+    if (text.length > 50 || /เศร้า|เหนื่อย|ท้อ|ร้องไห้|เจ็บ|แย่|แย่มาก|ไม่ไหว|ทนไม่ได้|หมดหวัง/.test(t)) return 'vent';
+    if (/^(สวัสดี|ดีจ้า|ว่าไง|เป็นไง|ฮัลโหล|hello|hi|555|5555|บาย|ดีครับ|ดีค่ะ)$/i.test(t)) return 'chitchat';
     return 'general';
 }
 
@@ -47,13 +48,22 @@ const SYSTEM_PROMPT_TH = `คุณคือ "น้องฟ้า" — เพ�
 - ถ้าเขาคุยเล่น -> คุยเล่นกลับ`;
 
 const FALLBACK_RULES = [
-    { match: /ทำไงดี|ทำยังไง|ควรทำ|แนะนำ|ช่วยคิด|ปรึกษา/i, th: 'ฟ้าเข้าใจนะว่ามันหนัก อยากให้ลองค่อย ๆ คิดทีละขั้นไหม? หรือถ้าอยากได้คนคุยจริง ๆ ครูแนะแนวหรือ 1323 ก็พร้อมฟังนะ', en: "i get that it's heavy. want to think it through step by step?" },
-    { match: /เรียน|สอบ|การบ้าน|เครียด|อ่านหนังสือ/i, th: 'ฟังแล้วเหนื่อยจริง ๆ นะ เรียนหนักขนาดนี้มากี่วันแล้ว', en: "sounds exhausting — how many days has it been like this?" },
+    // Suicidal or crisis (handled first)
+    { match: /ทำร้ายตัวเอง|กรีด|อยากตาย|ไม่อยากอยู่|ฆ่าตัวตาย|ผูกคอ|โดดตึก/i, th: 'ฟ้าได้ยินนะ เธอไม่ได้อยู่คนเดียว โทร 1323 ได้เลย เขาพร้อมฟังตลอด 24 ชั่วโมง', en: "i hear you. you're not alone. call 1323 — they listen 24/7." },
+    // Relationships: Heartbreak & Cheating
+    { match: /อกหัก|เลิก|นอกใจ|โดนทิ้ง|แฟนบอกเลิก/i, th: 'การโดนนอกใจหรือต้องเลิกรามันเจ็บมากเลยนะ ฟ้าเข้าใจเลย อยากระบายเพิ่มไหม หรืออยากให้ฟ้าช่วยคิดวิธีรับมือดี?', en: "getting cheated on or breaking up hurts so much. want to vent or think of a way to cope?" },
+    // Relationships: Crush & Love
+    { match: /ชอบคน|แอบชอบ|สารภาพรัก|จีบ|รักใคร|ตกหลุมรัก/i, th: 'เรื่องความรักนี่ชวนใจเต้นแรงเนอะ ไม่กล้าบอกก็ไม่แปลกเลย อยากเล่าให้ฟ้าฟังไหมว่าคนนั้นเขาเป็นยังไง?', en: "having a crush is exciting and nerve-wracking. want to tell me what they're like?" },
+    // Family & domestic
     { match: /ที่บ้าน|พ่อ|แม่|ครอบครัว|ทะเลาะ/i, th: 'เรื่องที่บ้านมันหนักนะ ฟ้าอยู่ตรงนี้ เล่าได้เลย', en: "family stuff is heavy. i'm here, tell me whatever you want." },
-    { match: /รัก|ชอบ|แฟน|เลิก|อกหัก|นอกใจ/i, th: 'การโดนนอกใจมันเจ็บมากเลยนะ ฟ้าเข้าใจเลย อยากระบายเพิ่มไหม หรืออยากให้ฟ้าช่วยคิดวิธีรับมือดี?', en: "getting cheated on hurts so much. want to vent or think of a way to cope?" },
-    { match: /ท้อง|ตั้งครรภ์|เพศ|sex|ป้องกัน/i, th: 'เรื่องนี้ฟ้าคุยได้ ไม่ตัดสิน', en: "we can talk about this, no judgment." },
-    { match: /นอนไม่หลับ|นอนไม่พอ|เบื่อ|หมดแรง|ไม่อยากทำอะไร/i, th: 'ฟังดูเหนื่อยมากทั้งกายทั้งใจเลย', en: "sounds like you're wiped out, body and mind." },
-    { match: /ทำร้ายตัวเอง|กรีด|อยากตาย|ไม่อยากอยู่/i, th: 'ฟ้าได้ยินนะ เธอไม่ได้อยู่คนเดียว โทร 1323 ได้เลย เขาพร้อมฟังตลอด 24 ชั่วโมง', en: "i hear you. you're not alone. call 1323 — they listen 24/7." },
+    // Academics & study
+    { match: /เรียน|สอบ|การบ้าน|เครียดเรื่องเรียน|อ่านหนังสือ/i, th: 'ฟังแล้วเหนื่อยจริง ๆ นะ เรียนหนักขนาดนี้มากี่วันแล้ว ไหวไหมเล่าให้ฟังได้นะ', en: "sounds exhausting — how many days has it been like this?" },
+    // Sex ed / pregnancy
+    { match: /ท้อง|ตั้งครรภ์|เพศ|sex|ป้องกัน|ถุงยาง|ยาคุม/i, th: 'เรื่องนี้ฟ้าคุยได้เสมอ ปลอดภัยและไม่ตัดสินนะ อยากปรึกษาตรงไหนเป็นพิเศษไหม?', en: "we can talk about this openly, no judgment. what's on your mind?" },
+    // Sleep & burnout
+    { match: /นอนไม่หลับ|นอนไม่พอ|เบื่อ|หมดแรง|ไม่อยากทำอะไร/i, th: 'ฟังดูเหนื่อยมากทั้งกายทั้งใจเลย คืนนี้อยากพักสมองก่อนไหม ฟ้าอยู่เป็นเพื่อนนะ', en: "sounds like you're wiped out, body and mind. want to take it easy tonight?" },
+    // General advice / problem solving
+    { match: /ทำไงดี|ทำยังไง|ควรทำ|แนะนำ|ช่วยคิด|ปรึกษา/i, th: 'ฟ้าเข้าใจนะว่ามันตัดสินใจยาก อยากให้ลองค่อย ๆ คิดทีละขั้นไหม? ลองเล่ารายละเอียดให้ฟ้าฟังอีกนิดนะ', en: "i get that it's tough to figure out. want to think it through step by step?" },
 ];
 
 function fallbackReply(message, crisisTier) {
@@ -75,7 +85,11 @@ function fallbackReply(message, crisisTier) {
 }
 
 function readConfig() {
-    return { base: (process.env.LLM_BASE_URL || '').trim(), key: (process.env.LLM_API_KEY || '').trim(), model: (process.env.LLM_MODEL || 'gpt-4o-mini').trim() };
+    return {
+        base: (process.env.LLM_BASE_URL || '').trim(),
+        key: (process.env.LLM_API_KEY || '').trim(),
+        model: (process.env.LLM_MODEL || 'llama-3.3-70b-versatile').trim(),
+    };
 }
 
 function isFallbackMode() {
@@ -93,7 +107,6 @@ function isFallbackMode() {
 async function summarize(messages) {
     const { base, key, model } = readConfig();
 
-    // สร้าง Raw Text ไว้เป็น Fallback เผื่อ API ล่ม
     const rawText = messages.map(m => `${m.role === 'user' ? 'ผู้ใช้' : 'ฟ้า'}: ${m.content}`).join('\n');
     const safeRawText = rawText.length > 800 ? rawText.slice(-800) + '\n...[ตัดข้อความเพื่อประหยัดพื้นที่]' : rawText;
 
@@ -110,28 +123,26 @@ async function summarize(messages) {
             body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: 150 }),
         });
 
-        if (!res.ok) throw new Error('API Error');
+        if (!res.ok) throw new Error(`API Error ${res.status}`);
         const data = await res.json();
-        const text = data.choices[0].message.content.trim();
+        const text = data.choices?.[0]?.message?.content?.trim();
         if (!text) throw new Error('Empty response');
         return text;
     } catch (e) {
         console.warn(`[Summarize Fallback] API failed: ${e.message}. Using local extraction.`);
-        // ถ้า API ล่ม ให้ใช้ Raw Text ที่ตัดทอนแล้วแทน เพื่อไม่ให้สูญเสียบริบท
         return `[สรุปจากระบบ]:\n${safeRawText}`;
     }
 }
 
 async function chat(messages, crisisTier = 0, pastSummary = '') {
-    const { base, key, model } = readConfig();
     const lastUser = [...messages].reverse().find((m) => m.role === 'user');
     const userText = lastUser?.content || '';
 
-    const intent = analyzeIntent(userText);
-    const strategy = getStrategy(intent, userText.length);
-
     if (isFallbackMode()) return fallbackReply(userText, crisisTier);
 
+    const { base, key, model } = readConfig();
+    const intent = analyzeIntent(userText);
+    const strategy = getStrategy(intent, userText.length);
     const style = detectStyle(userText);
     const cleanMessages = messages.map(({ role, content }) => ({ role, content }));
 
@@ -156,16 +167,22 @@ async function chat(messages, crisisTier = 0, pastSummary = '') {
         max_tokens: crisisTier >= 3 ? 250 : crisisTier >= 2 ? 300 : 800,
     };
 
-    const res = await fetch(`${base}/chat/completions`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
+    try {
+        const res = await fetch(`${base}/chat/completions`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
 
-    if (!res.ok) throw new Error(`llm ${res.status}`);
-    const data = await res.json();
-    const raw = (data.choices?.[0]?.message?.content || '').trim();
-    return guard(raw, style.lang === 'en');
+        if (!res.ok) throw new Error(`llm ${res.status}`);
+        const data = await res.json();
+        const raw = (data.choices?.[0]?.message?.content || '').trim();
+        return guard(raw, style.lang === 'en');
+    } catch (err) {
+        console.warn(`[llm.chat] Provider failed (${err.message}). Seamlessly engaging rule-based fallback.`);
+        const fallback = fallbackReply(userText, crisisTier);
+        return guard(fallback, style.lang === 'en');
+    }
 }
 
-module.exports = { chat, summarize, isFallbackMode };
+module.exports = { chat, summarize, fallbackReply, isFallbackMode, analyzeIntent };

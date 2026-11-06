@@ -1,5 +1,5 @@
 (function () {
-    const CONV_KEY = 'nf.conversations', CURRENT_KEY = 'nf.current';
+    const CONV_KEY = 'nf.conversations', CURRENT_KEY = 'nf.current', PERSIST_KEY = 'nf.persist';
     const chatScroll = document.getElementById('chatScroll');
     const welcomeEl = document.getElementById('welcome');
     const inputEl = document.getElementById('input');
@@ -40,10 +40,9 @@
         try {
             localStorage.setItem(CONV_KEY, JSON.stringify(conversations));
         } catch (e) {
-            // 🔥 FIX: จัดการเมื่อ LocalStorage เต็ม
             if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
                 ChatUI.toast('พื้นที่จัดเก็บเต็ม กำลังลบประวัติเก่า...');
-                conversations = conversations.slice(0, 20); // เก็บไว้แค่ 20 ห้องล่าสุด
+                conversations = conversations.slice(0, 20);
                 try { localStorage.setItem(CONV_KEY, JSON.stringify(conversations)); } catch { }
             }
         }
@@ -99,7 +98,6 @@
     async function sendToServer(conv, message) {
         const sid = await ensureSession(conv);
 
-        // 🔥 FIX: เพิ่ม Timeout 30 วินาที ป้องกัน Typing ค้าง
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -135,7 +133,6 @@
         const userTs = Date.now();
         conv.messages.push({ role: 'user', content: text, ts: userTs });
 
-        // 🔥 FIX: จำกัดข้อความในห้องไม่ให้เกิน 100 ข้อความ
         if (conv.messages.length > 100) conv.messages = conv.messages.slice(-100);
 
         conv.updated = Date.now(); saveConversations();
@@ -229,7 +226,8 @@
         if (action === 'edit' && msg.role === 'user') {
             const next = prompt('แก้ไขข้อความ:', msg.content); if (next === null) return;
             const trimmed = next.trim(); if (!trimmed || trimmed === msg.content) return;
-            conv.messages = conv.messages.slice(0, idx); conv.messages.push({ role: 'user', content: trimmed, ts: Date.now() });
+            // Truncate from this message onwards, let sendMessage push and render cleanly
+            conv.messages = conv.messages.slice(0, idx);
             conv.updated = Date.now(); saveConversations(); renderMessages();
             inputEl.value = trimmed; autoResize(); sendMessage(); return;
         }
@@ -276,11 +274,10 @@
     // ── Quick Exit & Actions ──
     function quickExit() {
         try {
-            const keys = ['nf.theme', 'nf.settings', 'nf.conversations', 'nf.current', 'nf.visited', 'nf.pin'];
+            const keys = ['nf.theme', 'nf.settings', 'nf.conversations', 'nf.current', 'nf.visited', 'nf.pin', PERSIST_KEY];
             keys.forEach(k => localStorage.removeItem(k));
-            sessionStorage.removeItem('nf.persist');
+            sessionStorage.removeItem(PERSIST_KEY);
 
-            // 🔥 FIX: ล้าง Cache ของ PWA ด้วย
             if ('caches' in window) {
                 caches.keys().then(names => {
                     names.forEach(name => caches.delete(name));
@@ -292,8 +289,12 @@
     document.getElementById('quickExitBtn').addEventListener('click', quickExit);
 
     document.getElementById('saveChatBtn').addEventListener('click', () => {
-        try { sessionStorage.setItem('nf.persist', '1'); ChatUI.toast('บันทึกประวัติลงเครื่องแล้ว'); }
-        catch (e) { ChatUI.toast('บันทึกไม่สำเร็จ'); }
+        try {
+            localStorage.setItem(PERSIST_KEY, '1');
+            ChatUI.toast('บันทึกประวัติลงเครื่องแล้ว (ไม่ล้างเมื่อปิดแท็บ)');
+        } catch (e) {
+            ChatUI.toast('บันทึกไม่สำเร็จ');
+        }
     });
 
     let lastEsc = 0;
@@ -304,7 +305,7 @@
     });
 
     function clearOnExit() {
-        if (!sessionStorage.getItem('nf.persist')) {
+        if (!localStorage.getItem(PERSIST_KEY)) {
             localStorage.removeItem(CONV_KEY);
             localStorage.removeItem(CURRENT_KEY);
         }
@@ -336,6 +337,11 @@
     document.getElementById('exportPdfBtn').addEventListener('click', () => {
         const conv = currentConv();
         const printWindow = window.open('', '_blank');
+
+        if (!printWindow) {
+            ChatUI.toast('กรุณาอนุญาต Pop-up เพื่อพิมพ์ PDF');
+            return;
+        }
 
         let html = `
       <html><head><title>Nong Fah AI - Chat Export</title>
@@ -379,6 +385,46 @@
         exportModal.hidden = true;
     });
 
+    // ── Crisis Overlay Safe Button ──
+    const crisisSafeBtn = document.getElementById('crisisSafeBtn');
+    if (crisisSafeBtn) {
+        crisisSafeBtn.addEventListener('click', () => {
+            crisisOverlay.hidden = true;
+        });
+    }
+
+    // ── Theme Quick Toggle ──
+    function updateThemeUI(resolvedTheme) {
+        const isDark = resolvedTheme === 'dark';
+        const label = document.getElementById('themeQuickLabel');
+        if (label) label.textContent = isDark ? 'โหมดสว่าง' : 'โหมดมืด';
+        document.querySelectorAll('#themeBtn i, #themeQuickBtn i').forEach((el) => {
+            el.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        });
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+    }
+
+    function toggleTheme() {
+        const cur = document.documentElement.getAttribute('data-theme') || 'light';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        window.Settings.set('theme', next);
+    }
+
+    const themeBtn = document.getElementById('themeBtn');
+    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+    const themeQuickBtn = document.getElementById('themeQuickBtn');
+    if (themeQuickBtn) themeQuickBtn.addEventListener('click', toggleTheme);
+
+    // ── First Visit Modal ──
+    const firstVisitModal = document.getElementById('firstVisitModal');
+    const firstVisitClose = document.getElementById('firstVisitClose');
+    if (firstVisitClose) {
+        firstVisitClose.addEventListener('click', () => {
+            localStorage.setItem('nf.visited', '1');
+            if (firstVisitModal) firstVisitModal.hidden = true;
+        });
+    }
+
     // ── UI Controls ──
     document.querySelectorAll('[data-close]').forEach((btn) => {
         btn.addEventListener('click', () => { const id = btn.dataset.close; const m = document.getElementById(id); if (m) m.hidden = true; });
@@ -387,7 +433,6 @@
         m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; });
     });
 
-    // 🔥 FIX: ปลดล็อก New Chat ให้กดได้เสมอ
     document.getElementById('newChatBtn').addEventListener('click', () => {
         newConversation();
         renderAll();
@@ -424,6 +469,7 @@
         if (e.key === 'Escape') {
             if (!settingsModal.hidden) closeModal(settingsModal);
             if (!aboutModal.hidden) closeModal(aboutModal);
+            if (!crisisOverlay.hidden) crisisOverlay.hidden = true;
             document.body.classList.remove('drawer-open');
         }
     });
@@ -449,8 +495,20 @@
         else if (!currentId || !conversations.find((c) => c.id === currentId)) { currentId = conversations[0].id; }
 
         renderAll(); autoResize(); sendBtn.disabled = true; inputEl.focus();
+
+        // Check first visit
+        if (!localStorage.getItem('nf.visited') && firstVisitModal) {
+            firstVisitModal.hidden = false;
+        }
+
+        const initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        updateThemeUI(initialTheme);
+
         if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
-        document.addEventListener('nf:theme', () => { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); });
+        document.addEventListener('nf:theme', (e) => {
+            const resolved = e.detail?.resolved || document.documentElement.getAttribute('data-theme');
+            updateThemeUI(resolved);
+        });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

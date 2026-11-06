@@ -12,17 +12,22 @@ async function alertOperator(sessionId, tier, reason) {
     if (!ALERT_WEBHOOK || tier < 2) return;
     if (!ALERT_WEBHOOK.startsWith('http')) return;
 
+    const isTier3 = tier >= 3;
+    const title = isTier3 ? '🚨 TIER-3 EMERGENCY: Immediate Danger Detected' : '⚠ TIER-2 SIGNAL: Self-Harm / Suicide Risk';
+    const color = isTier3 ? 0xdc2626 : 0xb91c1c;
+    const action = isTier3 ? 'URGENT: Review immediately (under 5 min)' : 'Review within 15 min';
+
     const payload = {
         username: 'nong-fah-safety',
         embeds: [{
-            title: '⚠ tier-2 signal detected',
-            color: 0xb91c1c,
+            title,
+            color,
             timestamp: new Date().toISOString(),
             fields: [
                 { name: 'session tag', value: '`' + hashSession(sessionId) + '`', inline: true },
                 { name: 'tier', value: String(tier), inline: true },
                 { name: 'reason', value: (reason || 'pattern match').slice(0, 200), inline: false },
-                { name: 'action', value: 'review within 15 min', inline: false },
+                { name: 'action', value: action, inline: false },
             ],
         }],
     };
